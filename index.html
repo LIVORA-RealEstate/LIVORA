@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LIVORA Real Estate</title>
+  <style>
+    :root{--gold:#d4af37;--bg:#0f0f10;--muted:#b9b9b9}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b0b0c,#141416);color:#fff;font-family:Segoe UI,Tahoma,Arial,sans-serif}
+    header{padding:56px 20px 28px;text-align:center;border-bottom:1px solid #222}
+    .brand{font-size:54px;letter-spacing:2px;color:var(--gold);margin:0}
+    .sub{margin:8px 0 0;color:var(--muted);font-weight:300}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px}
+    .card{background:#121315;border:1px solid #222;border-radius:14px;padding:26px;margin:14px auto;max-width:760px;text-align:center}
+    .cta{display:inline-block;margin-top:18px;padding:14px 24px;background:var(--gold);color:#111;text-decoration:none;border-radius:8px;font-weight:700;transition:.2s}
+    .cta:hover{transform:translateY(-2px)}
+    footer{padding:30px 20px;text-align:center;color:#8a8a8a;border-top:1px solid #222;margin-top:30px;font-size:14px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="brand">LIVORA REAL ESTATE</h1>
+    <p class="sub">Luxury Estates • Trusted Investments</p>
+  </header>
+
+  <main class="wrap">
+    <div class="card">
+      <h2>Welcome</h2>
+      <p>We curate premium properties and deliver a refined real-estate experience with trust, transparency, and value.</p>
+      <a class="cta" href="mailto:contact@livora.com">Contact Us</a>
+    </div>
+  </main>
+
+  <footer>
+    © <span id="y"></span> LIVORA Real Estate. All rights reserved.
+  </footer>
+
+  <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+</body>
+</html>
