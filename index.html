@@ -3,96 +3,91 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Alya Estate — Demo</title>
-  <!-- Tailwind + React UMD + Babel: يكفي ملف واحد يعمل مباشرة -->
+  <title>LIVORA — ليفورا</title>
+
+  <!-- منع الكاش علشان تحديثاتك تظهر فوراً -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- SEO أساسي -->
+  <meta name="description" content="LIVORA — ليفورا: منصة وساطة عقارية موثوقة لصفقات الأراضي، الشقق، المجمعات والمدارس. توثيق رسمي، تحقق ملكية، شبكة مستثمرين محلية وخليجية، واتساب مباشر." />
+  <meta property="og:title" content="LIVORA — منصة ليفورا العقارية" />
+  <meta property="og:description" content="وساطة موثوقة + توثيق + تحقق ملكية + شبكة مستثمرين. تواصل مباشر عبر واتساب أو البريد." />
+
+  <!-- Tailwind + React UMD + Babel: ملف واحد يكفي -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
   <style>
-    :root { --font-ar: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
-    body { font-family: var(--font-ar); background-color: #fafafa; }
+    :root { --font-ar: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Noto Sans"; }
+    body { font-family: var(--font-ar); background:#fafafa; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo, useEffect } = React;
+    const { useState, useEffect } = React;
 
-    // ✏️ غيّر بيانات العلامة هنا
+    // =========[ بيانات البراند — عدّل هنا فقط عند الحاجة ]=========
     const BRAND = {
-      nameEn: "Alya Estate",
-      nameAr: "عليا إستيت",
-      phoneIntl: "+962790000000",
-      whatsappBase: "https://wa.me/962790000000",
-      email: "deals@alyaestate.com",
+      nameEn: "LIVORA",                 // اسمك الإنجليزي
+      nameAr: "ليفورا",                 // اسمك العربي
+      phoneIntl: "+962796353701",       // ← عرض الرقم
+      whatsappBase: "https://wa.me/962796353701", // ← رابط الواتساب (بدون + وبدون 00)
+      email: "livoraestate.global@gmail.com",     // ← إيميل الاستقبال
     };
-    const whatsappLink = BRAND.whatsappBase + "?text=" + encodeURIComponent("مرحباً، أريد تفاصيل عقاراتكم");
+    // ============================================================
 
-    // أدوات مساعدة بسيطة
-    function getUTM(){
-      const p = new URLSearchParams(window.location.search);
-      const keys = ["utm_source","utm_medium","utm_campaign","utm_content"]; const parts=[];
-      keys.forEach(k=>{ const v=p.get(k); if(v) parts.push(k+":"+v); });
-      return parts.join("|");
-    }
-    function buildWhatsAppMessage(base){
-      const utm = getUTM();
-      const suffix = utm ? "\n\nRef:"+utm : "";
-      return encodeURIComponent(base+suffix);
-    }
+    const whatsappLink = BRAND.whatsappBase + "?text=" + encodeURIComponent("مرحباً، أريد تفاصيل عقارات ليفورا");
 
-    // مكوّنات الحاسبات
-    function CommissionCalculator(){
-      const [price,setPrice]=useState(1000000); const [rate,setRate]=useState(1.5);
-      const commission = useMemo(()=> ((Number(price)||0)*(Number(rate)||0))/100, [price,rate]);
+    // عدّادات حقيقية (ثابتة الآن — نربطها لاحقًا بقاعدة بيانات)
+    function Counters() {
+      const [counter] = useState({
+        investors: 0, // عدد المستثمرين الحقيقي الآن
+        verified:  0, // عقارات موثّقة فعليًا
+        closed:    0, // صفقات مغلقة فعلية
+      });
       return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">حاسبة العمولة</div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <input className="px-3 py-2 rounded-xl border" type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="قيمة الصفقة"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" step="0.25" value={rate} onChange={e=>setRate(e.target.value)} placeholder="% العمولة"/>
+        <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-2xl bg-white border p-4">
+            <div className="text-2xl font-extrabold">{counter.investors}</div>
+            <div className="text-xs text-neutral-600">مستثمر نشط</div>
           </div>
-          <div className="mt-3 text-sm">العمولة التقريبية: <b>{Number(commission).toLocaleString()} دينار</b></div>
-        </div>
-      );
-    }
-    function RoiCalculator(){
-      const [price,setPrice]=useState(150000); const [monthly,setMonthly]=useState(700); const [occ,setOcc]=useState(95);
-      const annualNet = useMemo(()=> (Number(monthly)||0)*12*((Number(occ)||0)/100), [monthly,occ]);
-      const roi = useMemo(()=> price ? (annualNet/Number(price))*100 : 0, [annualNet,price]);
-      return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">حاسبة العائد التأجيري</div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <input className="px-3 py-2 rounded-xl border" type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="سعر العقار"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" value={monthly} onChange={e=>setMonthly(e.target.value)} placeholder="الإيجار الشهري"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" value={occ} onChange={e=>setOcc(e.target.value)} placeholder="% الإشغال"/>
+          <div className="rounded-2xl bg-white border p-4">
+            <div className="text-2xl font-extrabold">{counter.verified}</div>
+            <div className="text-xs text-neutral-600">عقار موثّق</div>
           </div>
-          <div className="mt-3 text-sm">صافي الدخل السنوي: <b>{Number(annualNet).toLocaleString()} دينار</b></div>
-          <div className="text-sm">العائد التقريبي: <b>{Number(roi).toFixed(2)}%</b></div>
+          <div className="rounded-2xl bg-white border p-4">
+            <div className="text-2xl font-extrabold">{counter.closed}</div>
+            <div className="text-xs text-neutral-600">صفقة مُغلقة</div>
+          </div>
         </div>
       );
     }
 
-    function CommissionTemplate(){
-      const text = "أقرّ أنا [اسم المالك/المخوّل] بالموافقة على تسويق العقار [الوصف/الموقع] بواسطة "+BRAND.nameAr+" مقابل عمولة [X%] تُستحق عند توقيع عقد البيع/الشراء. التاريخ/التوقيع.";
-      const [copied,setCopied]=useState(false);
-      return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">قالب اتفاقية عمولة (نسخ بنقرة)</div>
-          <pre className="mt-3 text-xs bg-neutral-50 border rounded-2xl p-3 whitespace-pre-wrap leading-6">{text}</pre>
-          <button onClick={()=>{navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false),1500);}} className="mt-3 px-4 py-2 rounded-xl bg-black text-white text-sm">{copied?"تم النسخ ✔":"نسخ النص"}</button>
-        </div>
-      );
-    }
-
+    // معالج طلب عقار (واتساب مباشر)
     function RequestWizard(){
-      const [step,setStep]=useState(1); const [type,setType]=useState("أرض"); const [area,setArea]=useState("عمّان"); const [budget,setBudget]=useState("1,000,000"); const [name,setName]=useState(""); const [phone,setPhone]=useState("");
-      useEffect(()=>{ const n=localStorage.getItem("hz_name"); const p=localStorage.getItem("hz_phone"); if(n) setName(n); if(p) setPhone(p); },[]);
-      const msg = "طلب عقار:\nالنوع: "+type+"\nالمنطقة: "+area+"\nالميزانية: "+budget+"\nالاسم: "+name+"\nالهاتف: "+phone;
-      const wa = BRAND.whatsappBase+"?text="+buildWhatsAppMessage(msg);
+      const [step,setStep]=useState(1);
+      const [type,setType]=useState("أرض");
+      const [area,setArea]=useState("عمّان");
+      const [budget,setBudget]=useState("");
+      const [name,setName]=useState("");
+      const [phone,setPhone]=useState("");
+
+      const msg =
+        "طلب عقار:\n" +
+        "النوع: " + type + "\n" +
+        "المنطقة: " + area + "\n" +
+        "الميزانية: " + (budget || "غير محددة") + "\n" +
+        "الاسم: " + (name || "—") + "\n" +
+        "الهاتف: " + (phone || "—");
+
+      const wa = BRAND.whatsappBase + "?text=" + encodeURIComponent(msg);
+
       return (
         <div className="rounded-3xl border bg-white p-5 shadow-sm">
           <div className="font-bold mb-2">طلب عقار خلال 30 ثانية</div>
@@ -112,10 +107,7 @@
             </div>
           )}
           {step===3 && (
-            <div className="text-sm bg-neutral-50 border rounded-2xl p-3 leading-7">
-              <b>مراجعة</b>
-              <div>النوع: {type}</div><div>المنطقة: {area}</div><div>الميزانية: {budget}</div><div>الاسم: {name||"—"}</div><div>الهاتف: {phone||"—"}</div>
-            </div>
+            <div className="text-sm bg-neutral-50 border rounded-2xl p-3 leading-7 whitespace-pre-wrap">{msg}</div>
           )}
           <div className="mt-3 flex gap-2">
             {step>1 && <button className="px-4 py-2 rounded-xl border text-sm" onClick={()=>setStep(s=>Math.max(1,s-1))}>رجوع</button>}
@@ -126,55 +118,50 @@
       );
     }
 
-    function ListingCard({item}){
-      const [ack,setAck]=useState(false);
+    // كروت العقارات — مفرّغة مؤقتًا لتجنّب أي ديمو
+    function ListingsSection(){
+      const [listings] = useState([]); // ← لما ترسل بياناتك الحقيقية نملأها أو نربط Google Sheet
       return (
-        <article className="rounded-3xl overflow-hidden border bg-white shadow-sm hover:shadow-md transition">
-          <div className="relative">
-            <img src={item.img} alt={item.title} className={(item.offMarket && !ack ? "blur-sm ":"")+"h-48 w-full object-cover"} />
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs bg-white/90 border">{item.tag}</div>
-            {item.offMarket && !ack && (
-              <div className="absolute inset-0 grid place-items-center"><div className="px-3 py-1.5 rounded-full bg-black/70 text-white text-xs">عرض Off‑Market — يتطلب NDA</div></div>
-            )}
+        <section id="listings" className="max-w-7xl mx-auto px-4 mb-14">
+          <div className="flex items-end justify-between mb-4">
+            <h2 className="text-2xl md:text-3xl font-extrabold">عقارات مميزة</h2>
+            <a href="#contact" className="text-sm underline underline-offset-4">لديك عقار مميز؟ أرسله الآن</a>
           </div>
-          <div className="p-4">
-            <div className="text-lg font-bold">{item.title}</div>
-            <div className="text-sm text-neutral-600 mt-1">{item.meta}</div>
-            <div className="mt-3 font-extrabold">{item.price}</div>
-            <div className="mt-2 text-xs px-2 py-1 rounded-full inline-block bg-yellow-100 border">{item.badge}</div>
-            {item.offMarket && (
-              <div className="mt-3 text-xs bg-neutral-50 border rounded-2xl p-3">
-                <label className="flex gap-2 items-start cursor-pointer">
-                  <input type="checkbox" className="mt-1" checked={ack} onChange={e=>setAck(e.target.checked)} />
-                  <span>أوافق على عدم مشاركة التفاصيل دون إذن (NDA).</span>
-                </label>
-              </div>
-            )}
-            <div className="mt-4 flex gap-2">
-              <a href={whatsappLink} target="_blank" className="flex-1 text-center px-4 py-2 rounded-xl bg-black text-white text-sm">استفسار واتساب</a>
-              <a href="#contact" className="flex-1 text-center px-4 py-2 rounded-xl border text-sm">طلب المزيد</a>
+          {listings.length === 0 ? (
+            <div className="text-sm text-neutral-600 bg-white border rounded-3xl p-5">
+              لا توجد عقارات منشورة بعد. أرسل لنا تفاصيل العقارات الحقيقية لنقوم بإدراجها هنا فورًا.
             </div>
-          </div>
-        </article>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {listings.map((l,i)=>(
+                <article key={i} className="rounded-3xl overflow-hidden border bg-white shadow-sm">
+                  <img src={l.img} alt={l.title} className="h-48 w-full object-cover" />
+                  <div className="p-4">
+                    <div className="text-lg font-bold">{l.title}</div>
+                    <div className="text-sm text-neutral-600 mt-1">{l.meta}</div>
+                    <div className="mt-3 font-extrabold">{l.price}</div>
+                    <div className="mt-2 text-xs px-2 py-1 rounded-full inline-block bg-yellow-100 border">{l.badge}</div>
+                    <div className="mt-4 flex gap-2">
+                      <a href={whatsappLink} target="_blank" className="flex-1 text-center px-4 py-2 rounded-xl bg-black text-white text-sm">استفسار واتساب</a>
+                      <a href="#contact" className="flex-1 text-center px-4 py-2 rounded-xl border text-sm">طلب المزيد</a>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       );
     }
 
     function App(){
-      const [listings] = useState([
-        { tag:"أرض استثمارية", title:"10 دونم – طريق المطار", price:"1,200,000 دينار", badge:"عمولة محتملة 2%", meta:"سكني/تجاري • قرب مشاريع قائمة", img:"https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1200&auto=format&fit=crop", offMarket:true },
-        { tag:"مدرسة خاصة", title:"مدرسة مرخصة – عمّان الغربية", price:"3,500,000 دينار", badge:"عمولة محتملة 2%", meta:"مجهزة بالكامل • طاقة استيعابية ممتازة", img:"https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=1200&auto=format&fit=crop", offMarket:false },
-        { tag:"مجمع تجاري", title:"مجمع حديث – تلاع العلي", price:"2,800,000 دينار", badge:"عمولة محتملة 1.5%", meta:"واجهة رئيسية • إشغال مرتفع", img:"https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop", offMarket:false },
-        { tag:"مشروع شقق", title:"12 شقة فاخرة – عبدون", price:"4,200,000 دينار (كامل المشروع)", badge:"عمولة مرنة", meta:"تشطيبات فاخرة • جاهز للبيع", img:"https://images.unsplash.com/photo-1507089947368-19c1da9775ae?q=80&w=1200&auto=format&fit=crop", offMarket:true },
-      ]);
-      const [counter,setCounter] = useState({investors:128, verified:342, closed:27});
-      useEffect(()=>{ const t=setInterval(()=> setCounter(c=>({investors:c.investors+1, verified:c.verified+2, closed:c.closed})), 5000); return ()=>clearInterval(t); },[]);
-
+      useEffect(()=>{ document.title = BRAND.nameEn + " — " + BRAND.nameAr; },[]);
       return (
         <div dir="rtl" className="min-h-screen bg-neutral-50 text-neutral-900">
           <header className="w-full border-b bg-white/80 backdrop-blur sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-bold">A</div>
+                <div className="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-bold">L</div>
                 <div className="font-extrabold text-xl tracking-tight">{BRAND.nameEn} | {BRAND.nameAr}</div>
               </div>
               <div className="hidden md:flex items-center gap-6 text-sm">
@@ -191,23 +178,18 @@
             <div className="absolute inset-0 -z-10 bg-gradient-to-b from-neutral-100 to-neutral-50"></div>
             <div className="max-w-7xl mx-auto px-4 pt-14 pb-10 grid lg:grid-cols-2 gap-10 items-center">
               <div>
-                <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">منصة عقارية خارقة لصفقات <span className="bg-yellow-200 px-2 rounded">الأراضي، الشقق، المجمعات، والمدارس</span></h1>
-                <p className="mt-4 text-neutral-600 text-lg">نُحوّل الجدية إلى صفقات: تحقق ملكية صارم، توثيق رسمي، تسويق احترافي، شبكة مستثمرين محلية وخليجية — مع أدوات فورية تزيد احتمالية الإغلاق.</p>
+                <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
+                  منصة {BRAND.nameAr} العقارية
+                  <span className="bg-yellow-200 px-2 rounded"> — صفقات أراضي، شقق، مجمعات ومدارس</span>
+                </h1>
+                <p className="mt-4 text-neutral-600 text-lg">
+                  نُحوّل الجدية إلى صفقات: تحقق ملكية، توثيق رسمي، تسويق احترافي، شبكة مستثمرين محلية وخليجية — مع أدوات فورية تزيد احتمالية الإغلاق.
+                </p>
                 <div className="mt-6 flex flex-col sm:flex-row gap-3">
                   <a href="#listings" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold shadow hover:shadow-lg">استعرض العقارات</a>
                   <a href="#contact" className="px-5 py-3 rounded-2xl bg-white border font-semibold hover:bg-neutral-100">أضف عقارك / اطلب عقار</a>
                 </div>
-                <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-neutral-600">
-                  <div className="px-3 py-1.5 rounded-full bg-white border">اتفاقيات موثقة</div>
-                  <div className="px-3 py-1.5 rounded-full bg-white border">تحقق ملكية KYC</div>
-                  <div className="px-3 py-1.5 rounded-full bg-white border">وساطة عادلة</div>
-                  <div className="px-3 py-1.5 rounded-full bg-white border">شبكة مستثمرين خليج</div>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-2xl bg-white border p-4"><div className="text-2xl font-extrabold">{counter.investors}</div><div className="text-xs text-neutral-600">مستثمر نشط</div></div>
-                  <div className="rounded-2xl bg-white border p-4"><div className="text-2xl font-extrabold">{counter.verified}</div><div className="text-xs text-neutral-600">عقار موثّق</div></div>
-                  <div className="rounded-2xl bg-white border p-4"><div className="text-2xl font-extrabold">{counter.closed}</div><div className="text-xs text-neutral-600">صفقة مُغلقة</div></div>
-                </div>
+                <Counters />
               </div>
               <div className="relative">
                 <img src="https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1600&auto=format&fit=crop" alt="Real estate hero" className="rounded-3xl shadow-xl w-full h-[360px] object-cover"/>
@@ -223,39 +205,31 @@
           </section>
 
           <section id="tools" className="max-w-7xl mx-auto px-4 mb-12">
-            <div className="grid lg:grid-cols-3 gap-4">
+            <div className="grid lg:grid-cols-2 gap-4">
               <RequestWizard />
-              <CommissionCalculator />
-              <RoiCalculator />
+              <div className="rounded-3xl border bg-white p-5 shadow-sm">
+                <div className="font-bold mb-2">تواصل مباشر</div>
+                <div className="text-sm text-neutral-600">تواصل فورًا عبر الواتساب أو البريد:</div>
+                <div className="mt-3 flex flex-col sm:flex-row gap-3">
+                  <a href={whatsappLink} target="_blank" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold text-center">واتساب: {BRAND.phoneIntl}</a>
+                  <a href={"mailto:"+BRAND.email} className="px-5 py-3 rounded-2xl border font-semibold text-center">بريد: {BRAND.email}</a>
+                </div>
+              </div>
             </div>
           </section>
 
-          <section id="listings" className="max-w-7xl mx-auto px-4 mb-14">
-            <div className="flex items-end justify-between mb-4">
-              <h2 className="text-2xl md:text-3xl font-extrabold">عقارات مميزة</h2>
-              <a href="#contact" className="text-sm underline underline-offset-4">لديك عقار مميز؟ أرسله الآن</a>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {listings.map((l,i)=> <ListingCard key={i} item={l} />)}
-            </div>
-          </section>
+          <ListingsSection />
 
           <section id="contact" className="max-w-7xl mx-auto px-4 mb-20">
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="rounded-3xl border bg-white p-6 md:p-10 shadow-sm">
                 <h3 className="text-2xl font-extrabold">تواصل سريع</h3>
-                <p className="text-neutral-600 mt-2">عبّئ الطلب ليتم التواصل معك خلال ساعة (أوقات العمل).</p>
-                <form className="mt-6 grid gap-3" onSubmit={e=>e.preventDefault()}>
-                  <input required className="px-4 py-3 rounded-2xl border" placeholder="الاسم الكامل"/>
-                  <input required className="px-4 py-3 rounded-2xl border" placeholder="رقم الهاتف"/>
-                  <select className="px-4 py-3 rounded-2xl border"><option>أرغب ببيع عقاري</option><option>أبحث عن شراء عقار</option><option>شراكة/استثمار</option></select>
-                  <textarea rows="4" className="px-4 py-3 rounded-2xl border" placeholder="اكتب تفاصيل مختصرة عن العقار أو طلبك"></textarea>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <a href={whatsappLink} target="_blank" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold text-center">واتساب فوري</a>
-                    <a href={"mailto:"+BRAND.email} className="px-5 py-3 rounded-2xl border font-semibold text-center">مراسلة بريدية</a>
-                  </div>
-                  <div className="text-xs text-neutral-500 mt-2">بالنقر على إرسال، أنت توافق على شروط الاستخدام وسياسة الخصوصية.</div>
-                </form>
+                <p className="text-neutral-600 mt-2">ارسل تفاصيلك لنعود إليك سريعًا:</p>
+                <div className="mt-6 grid gap-3">
+                  <a href={whatsappLink} target="_blank" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold text-center">واتساب فوري</a>
+                  <a href={"mailto:"+BRAND.email} className="px-5 py-3 rounded-2xl border font-semibold text-center">مراسلة بريدية</a>
+                </div>
+                <div className="text-xs text-neutral-500 mt-2">بالضغط على الروابط، توافق على الشروط وسياسة الخصوصية.</div>
               </div>
               <div className="rounded-3xl border bg-white p-6 md:p-10 shadow-sm">
                 <h3 className="text-2xl font-extrabold">سياسة النزاهة والموثوقية</h3>
@@ -266,7 +240,7 @@
                   <li>حماية حقوق جميع الأطراف وفق القوانين الأردنية.</li>
                 </ul>
                 <div className="mt-6 rounded-2xl bg-neutral-50 border p-4 text-sm text-neutral-600">
-                  للتعاون الفوري بالمشاريع الكبيرة (أراضي، مدارس، مجمعات):
+                  للتعاون الفوري بالمشاريع الكبيرة:
                   <div className="mt-2 font-bold">اتصل: {BRAND.phoneIntl} • البريد: {BRAND.email}</div>
                 </div>
               </div>
