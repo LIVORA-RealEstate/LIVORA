@@ -10,18 +10,19 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <!-- SEO أساسي -->
-  <meta name="description" content="LIVORA — ليفورا: منصة وساطة عقارية موثوقة لصفقات الأراضي، الشقق، المجمعات والمدارس. توثيق رسمي، تحقق ملكية، شبكة مستثمرين محلية وخليجية، واتساب وبريد مباشر." />
-  <meta property="og:title" content="LIVORA — ليفورا العقارية" />
-  <meta property="og:description" content="وساطة موثوقة + توثيق + تحقق ملكية + شبكة مستثمرين. تواصل مباشر عبر واتساب أو البريد." />
+  <!-- SEO مبسّط -->
+  <meta name="description" content="LIVORA — منصة عقارية موثوقة لعرض وبيع وشراء العقارات محليًا وخليجيًا. تواصل واتساب فوري وفلترة مرنة ودعم عملات متعددة." />
+  <meta property="og:title" content="LIVORA — المنصّة العقارية" />
+  <meta property="og:description" content="شبكة مستثمرين، وتواصل مباشر عبر واتساب، ودعم عملات متعددة." />
+  <meta property="og:type" content="website" />
 
   <!-- Google Analytics GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-2WXJ9SL5LP"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){ dataLayer.push(arguments); }
     gtag('js', new Date());
-    gtag('config', 'G-2WXJ9SL5LP'); // LIVORA GA4
+    gtag('config', 'G-2WXJ9SL5LP');
   </script>
 
   <!-- Tailwind + React UMD + Babel -->
@@ -30,605 +31,269 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- (اختياري لاحقًا: خريطة Leaflet) -->
-  <!--
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  -->
-
   <style>
-    :root { --font-ar: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", "Noto Sans"; }
-    body { font-family: var(--font-ar); background:#fafafa; }
+    :root { --font-ar: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+    html, body { height: 100%; }
+    body { font-family: var(--font-ar); background: #fafafa; }
+    .container { max-width: 1120px; }
+    .glass { backdrop-filter: blur(6px); background: rgba(255,255,255,.7); }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useEffect, useMemo, useState } = React;
 
-    // ================== إعدادات البراند ==================
+    /* إعدادات البراند */
     const BRAND = {
-      nameEn: "LIVORA",
+      nameEn: "LIVORA Estate",
       nameAr: "ليفورا",
       phoneIntl: "+962796353701",
-      whatsappBase: "https://wa.me/962796353701",
+      whatsapp: "https://wa.me/962796353701",
       email: "livoraestate.global@gmail.com",
+      primary: "bg-black",
     };
-    const whatsappLink = BRAND.whatsappBase + "?text=" + encodeURIComponent("مرحباً، أريد تفاصيل عقارات ليفورا");
-    // =====================================================
 
-    // ====== روابط Google Sheet / Google Form ======
-    const CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTqmT5i7QVxFy-laVQN9K2R-Xgz-rNorv0CXS-a9dZd1DF8SMM3JF3ElzTNvV1oXoHKazCL0vRj5sVr/pub?gid=0&single=true&output=csv";
-    const FORM_URL = ""; // ← ضع هنا لاحقًا رابط Google Form (اختياري)
-    // ==============================================
+    /* رابط Google Sheet CSV (عام) */
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTqmT5i7QVxFy-laVQN9K2R-Xgz-rNorv0CXS-a9dZd1DF8SMM3JF3ElzTNvV1oXoHKazCL0vRj5sVr/pub?gid=0&single=true&output=csv";
 
-    // تتبّع أحداث مخصّصة إلى GA4
-    function track(eventName, params = {}) {
-      if (window.gtag) { window.gtag('event', eventName, params); }
-    }
-
-    // ============= العملات + أسعار الصرف =============
-    const CURRENCIES = [
-      { code:"JOD", label:"دينار أردني" },
-      { code:"USD", label:"دولار أمريكي" },
-      { code:"AED", label:"درهم إماراتي" },
-      { code:"SAR", label:"ريال سعودي" },
-      { code:"EUR", label:"يورو" },
-      { code:"KWD", label:"دينار كويتي" },
-      { code:"QAR", label:"ريال قطري" },
-      { code:"OMR", label:"ريال عُماني" },
-      { code:"BHD", label:"دينار بحريني" },
-    ];
-    const FALLBACK_RATES = {
-      base: "JOD",
-      rates: { JOD:1, USD:1.41, AED:5.18, SAR:5.29, EUR:1.30, KWD:0.43, QAR:5.14, OMR:0.54, BHD:0.53 }
+    /* أسعار صرف بسيطة افتراضية - عدّلها لاحقًا أو وصل API */
+    const DEFAULT_RATES = {
+      JOD: 1,       // دينار أردني أساس
+      USD: 1.41,    // مثال
+      AED: 5.18,
+      SAR: 5.28,
+      EUR: 1.29
     };
-    async function getRates(){
-      try {
-        const r = await fetch("https://api.exchangerate.host/latest?base=JOD&symbols=JOD,USD,AED,SAR,EUR,KWD,QAR,OMR,BHD");
-        const j = await r.json();
-        if(j && j.rates) return { base:"JOD", rates: j.rates };
-        return FALLBACK_RATES;
-      } catch { return FALLBACK_RATES; }
-    }
-    function useRates(){
-      const [data,setData]=useState(FALLBACK_RATES);
-      useEffect(()=>{ getRates().then(setData); },[]);
-      return data;
-    }
-    function sym(code){ return ({JOD:"دينار",USD:"$",AED:"د.إ",SAR:"ر.س",EUR:"€",KWD:"د.ك",QAR:"ر.ق",OMR:"ر.ع",BHD:"د.ب"}[code]||code); }
-    function moneyByCode(v, code){ return `${Number(v||0).toLocaleString()} ${sym(code)}`; }
 
-    // أدوات
-    function getUTM(){
-      const p = new URLSearchParams(window.location.search);
-      const keys = ["utm_source","utm_medium","utm_campaign","utm_content"]; const parts=[];
-      keys.forEach(k=>{ const v=p.get(k); if(v) parts.push(k+":"+v); });
-      return parts.join("|");
+    /* أدوات */
+    const currencyLabel = { JOD:"دينار", USD:"دولار", AED:"درهم", SAR:"ريال", EUR:"يورو" };
+    function toNumber(x){
+      if(x === null || x === undefined) return 0;
+      const s = String(x).replace(/[^0-9.\-]/g,'');
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
     }
-    function buildWhatsAppMessage(base){
-      const utm = getUTM();
-      const suffix = utm ? "\n\nRef:"+utm : "";
-      return encodeURIComponent(base+suffix);
+    function priceFmt(v, c, rates){
+      const jod = toNumber(v);
+      const r = rates[c] || 1;
+      const converted = c === "JOD" ? jod : (jod / rates["JOD"]) * r;
+      const withSep = Math.round(converted).toLocaleString();
+      const unit = currencyLabel[c] || c;
+      return `${withSep} ${unit}`;
     }
 
-    // حاسبة العمولة
-    function CommissionCalculator({currency, rates}){
-      const [priceJOD,setPriceJOD]=useState(1000000);
-      const [rate,setRate]=useState(1.5);
-      const r = rates?.rates?.[currency] || 1;
-      const priceSel = (Number(priceJOD)||0) * r;
-      const commissionSel = (priceSel * (Number(rate)||0))/100;
-      return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">حاسبة العمولة</div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <input className="px-3 py-2 rounded-xl border" type="number" value={priceJOD} onChange={e=>setPriceJOD(e.target.value)} placeholder="قيمة الصفقة (JOD)"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" step="0.25" value={rate} onChange={e=>setRate(e.target.value)} placeholder="% العمولة"/>
-          </div>
-          <div className="mt-3 text-sm">
-            قيمة الصفقة بعملتك: <b>{moneyByCode(priceSel, currency)}</b><br/>
-            العمولة: <b>{moneyByCode(commissionSel, currency)}</b>
-          </div>
-        </div>
-      );
-    }
-
-    // حاسبة العائد التأجيري
-    function RoiCalculator({currency, rates}){
-      const [priceJOD,setPriceJOD]=useState(150000);
-      const [monthlyJOD,setMonthlyJOD]=useState(700);
-      const [occ,setOcc]=useState(95);
-      const r = rates?.rates?.[currency] || 1;
-      const annualNetSel = (Number(monthlyJOD)||0)*12*((Number(occ)||0)/100)*r;
-      const priceSel = (Number(priceJOD)||0)*r;
-      const roi = priceSel ? (annualNetSel/priceSel)*100 : 0;
-      return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">حاسبة العائد التأجيري</div>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <input className="px-3 py-2 rounded-xl border" type="number" value={priceJOD} onChange={e=>setPriceJOD(e.target.value)} placeholder="سعر العقار (JOD)"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" value={monthlyJOD} onChange={e=>setMonthlyJOD(e.target.value)} placeholder="الإيجار الشهري (JOD)"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" value={occ} onChange={e=>setOcc(e.target.value)} placeholder="% الإشغال"/>
-          </div>
-          <div className="mt-3 text-sm">صافي الدخل السنوي: <b>{moneyByCode(annualNetSel, currency)}</b></div>
-          <div className="text-sm">العائد التقريبي: <b>{Number(roi).toFixed(2)}%</b></div>
-        </div>
-      );
-    }
-
-    // Valuator Pro — (بدون ربا) تسعير + عائد فقط
-    function ValuatorPro({ currency, rates }) {
-      const r = rates?.rates?.[currency] || 1;
-      const PRESETS = {
-        "عمّان - عبدون":       { pps: 1100, rentPps: 8.5, loc: "A" },
-        "عمّان - خلدا":        { pps: 950,  rentPps: 7.5, loc: "A" },
-        "عمّان - تلاع العلي":  { pps: 850,  rentPps: 6.8, loc: "B" },
-        "الزرقاء - الجديدة":   { pps: 450,  rentPps: 4.0, loc: "B" },
-        "العقبة - الشاطئ":     { pps: 1000, rentPps: 7.2, loc: "A" },
-      };
-      function readQP(key, def) { const v = new URLSearchParams(window.location.search).get(key); return v!==null ? v : def; }
-      function setQP(obj){ const p = new URLSearchParams(window.location.search); Object.entries(obj).forEach(([k,v])=>{ if(v===null||v===undefined||v===""){p.delete(k);} else {p.set(k,v);} }); history.replaceState(null,"","?"+p.toString()); }
-
-      const [preset, setPreset] = useState(readQP("preset","عمّان - عبدون"));
-      const d = PRESETS[preset] || PRESETS["عمّان - عبدون"];
-      const [area, setArea] = useState(Number(readQP("area", 150)));
-      const [ppsJOD, setPps] = useState(Number(readQP("pps", d.pps)));
-      const [rentPpsJOD, setRentPps] = useState(Number(readQP("rpps", d.rentPps)));
-      const [loc, setLoc] = useState(readQP("loc", d.loc));
-      const [age, setAge] = useState(Number(readQP("age", 5)));
-      const [beds, setBeds] = useState(Number(readQP("beds", 3)));
-      const [baths, setBaths] = useState(Number(readQP("baths", 2)));
-      const [floor, setFloor] = useState(Number(readQP("floor", 3)));
-      const [view, setView] = useState(readQP("view","City"));
-      const [corner, setCorner] = useState(readQP("corner","no"));
-      const [parking, setParking] = useState(readQP("parking","yes"));
-
-      const locMult = { A:1.15, B:1.0, C:0.88 }[loc] || 1.0;
-      const ageMult = Math.max(0.8, 1 - (Math.max(0, age-3) * 0.01));
-      const bedAdj = 1 + Math.min(Math.max((beds - 2) * 0.035, -0.07), 0.21);
-      const bathAdj = 1 + Math.min(Math.max((baths - 1) * 0.03, -0.05), 0.18);
-      const floorAdj = 1 + Math.min(floor, 10) * 0.01;
-      const viewAdj = { City:1.00, Garden:1.03, Sea:1.08 }[view] || 1.0;
-      const cornerAdj = corner === "yes" ? 1.02 : 1.0;
-      const parkingAdjJOD = parking === "yes" ? 3000 : 0;
-
-      const fairJOD = (area||0) * (ppsJOD||0) * locMult * ageMult * bedAdj * bathAdj * floorAdj * viewAdj * cornerAdj + parkingAdjJOD;
-      const lowJOD = fairJOD * 0.95, highJOD = fairJOD * 1.05;
-      const fairSel = fairJOD * r, lowSel = lowJOD * r, highSel = highJOD * r;
-
-      const monthlyRentJOD = (rentPpsJOD||0) * (area||0);
-      const opx = 0.08; // مصاريف تشغيلية تقديرية
-      const annualNetSel = monthlyRentJOD * 12 * (1 - opx) * r;
-      const capRate = fairSel ? (annualNetSel / fairSel) * 100 : 0;
-
-      useEffect(()=>{ setQP({preset,area,pps:ppsJOD,rpps:rentPpsJOD,loc,age,beds,baths,floor,view,corner,parking}); },
-        [preset,area,ppsJOD,rentPpsJOD,loc,age,beds,baths,floor,view,corner,parking]);
-
-      const waMsg =
-`تقييم LIVORA (بدون ربا):
-Preset: ${preset}
-مساحة: ${area} م² | سعر/م² (JOD): ${ppsJOD} | إيجار/م² (JOD): ${rentPpsJOD}
-موقع: ${loc} | عمر: ${age} | غرف/حمّامات: ${beds}/${baths} | طابق: ${floor} | إطلالة: ${view} | زاوية: ${corner} | موقف: ${parking}
-
-السعر العادل (${currency}): ${moneyByCode(fairSel, currency)}
-المدى (${currency}): ${moneyByCode(lowSel, currency)} - ${moneyByCode(highSel, currency)}
-الدخل الصافي السنوي (${currency}): ${moneyByCode(annualNetSel, currency)} | Cap Rate: ${capRate.toFixed(1)}%
-`;
-      const wa = BRAND.whatsappBase + "?text=" + encodeURIComponent(waMsg);
-      const mail = "mailto:"+BRAND.email+"?subject="+encodeURIComponent("تقييم LIVORA")+"&&body="+encodeURIComponent(waMsg);
-
-      return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">Valuator Pro — تسعير + عائد (بدون ربا)</div>
-
-          <div className="grid md:grid-cols-3 gap-2 text-sm mb-2">
-            <select className="px-3 py-2 rounded-xl border" value={preset} onChange={e=>{
-              const p=e.target.value; setPreset(p);
-              const d=PRESETS[p]; if(d){ setPps(d.pps); setRentPps(d.rentPps); setLoc(d.loc); }
-            }}>
-              {Object.keys(PRESETS).map(k => <option key={k} value={k}>{k}</option>)}
-            </select>
-            <input className="px-3 py-2 rounded-xl border" type="number" min="20" value={area} onChange={e=>setArea(Number(e.target.value))} placeholder="المساحة (م²)"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" min="100" value={ppsJOD} onChange={e=>setPps(Number(e.target.value))} placeholder="سعر/م² (JOD)"/>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-2 text-sm mb-2">
-            <input className="px-3 py-2 rounded-xl border" type="number" min="0" value={age} onChange={e=>setAge(Number(e.target.value))} placeholder="عمر البناء"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" min="0" value={beds} onChange={e=>setBeds(Number(e.target.value))} placeholder="غرف"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" min="0" value={baths} onChange={e=>setBaths(Number(e.target.value))} placeholder="حمّامات"/>
-            <input className="px-3 py-2 rounded-xl border" type="number" min="0" value={floor} onChange={e=>setFloor(Number(e.target.value))} placeholder="الطابق"/>
-          </div>
-          <div className="grid md:grid-cols-4 gap-2 text-sm mb-3">
-            <select className="px-3 py-2 rounded-xl border" value={loc} onChange={e=>setLoc(e.target.value)}>
-              <option value="A">موقع A (ممتاز)</option>
-              <option value="B">موقع B (جيد)</option>
-              <option value="C">موقع C (متوسط)</option>
-            </select>
-            <select className="px-3 py-2 rounded-xl border" value={view} onChange={e=>setView(e.target.value)}>
-              <option value="City">City</option><option value="Garden">Garden</option><option value="Sea">Sea</option>
-            </select>
-            <select className="px-3 py-2 rounded-xl border" value={corner} onChange={e=>setCorner(e.target.value)}>
-              <option value="no">ليست زاوية</option><option value="yes">زاوية</option>
-            </select>
-            <select className="px-3 py-2 rounded-xl border" value={parking} onChange={e=>setParking(e.target.value)}>
-              <option value="yes">موقف</option><option value="no">بدون موقف</option>
-            </select>
-          </div>
-
-          <div className="mt-3 grid md:grid-cols-3 gap-3 text-sm">
-            <div className="rounded-2xl bg-neutral-50 border p-4">
-              <div className="text-neutral-600">السعر العادل</div>
-              <div className="text-lg font-extrabold">{moneyByCode(fairSel, currency)}</div>
-              <div className="text-xs text-neutral-500">مدى: {moneyByCode(lowSel, currency)} – {moneyByCode(highSel, currency)}</div>
-            </div>
-            <div className="rounded-2xl bg-neutral-50 border p-4">
-              <div className="text-neutral-600">Cap Rate</div>
-              <div className="text-lg font-extrabold">{capRate.toFixed(1)}%</div>
-            </div>
-            <div className="rounded-2xl bg-neutral-50 border p-4">
-              <div className="text-neutral-600">صافي الدخل السنوي</div>
-              <div className="text-lg font-extrabold">{moneyByCode(annualNetSel, currency)}</div>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col sm:flex-row gap-2">
-            <a href={wa} target="_blank" className="px-4 py-2 rounded-xl bg-black text-white text-sm text-center"
-               onClick={()=>track('valuator_share_whatsapp', {preset, area, ppsJOD, rentPpsJOD})}>
-              أرسل التقييم على واتساب
-            </a>
-            <a href={mail} className="px-4 py-2 rounded-xl border text-sm text-center"
-               onClick={()=>track('valuator_share_email', {preset, area, ppsJOD})}>
-              أرسل التقييم على البريد
-            </a>
-            <button onClick={()=>{
-                navigator.clipboard.writeText(window.location.href);
-                track('valuator_copy_link', {preset, area, ppsJOD});
-              }}
-              className="px-4 py-2 rounded-xl border text-sm text-center">نسخ رابط هذا التقييم</button>
-          </div>
-
-          <div className="mt-3 text-xs text-neutral-500 leading-6">
-            * تقدير تقريبي استرشادي. للتقييم الرسمي نحتاج وثائق وموقع دقيق وصور/معاينة.
-          </div>
-        </div>
-      );
-    }
-
-    // قسم العقارات — يقرأ من CSV + فلاتر + مفضّلات + مميّز
-    function ListingsSection({currency, rates}){
-      const [listings, setListings] = useState([]);
-      const [loadingCSV, setLoadingCSV] = useState(true);
-
-      // فلاتر
-      const [q, setQ] = useState("");
-      const [city, setCity] = useState("الكل");
-      const [type, setType] = useState("الكل");
-      const [maxPrice, setMaxPrice] = useState("");
-
-      // مفضّلات
-      const [fav, setFav] = useState(()=>{
-        try { return JSON.parse(localStorage.getItem("fav")||"[]"); } catch { return []; }
-      });
-      function toggleFav(title){
-        setFav(prev=>{
-          const has = prev.includes(title);
-          const next = has ? prev.filter(t=>t!==title) : [...prev, title];
-          localStorage.setItem("fav", JSON.stringify(next));
-          return next;
-        });
-      }
-
-      function parseCSV(text){
-        const lines = text.trim().split(/\r?\n/);
-        const header = lines[0].split(",").map(h => h.trim());
-        const rows = lines.slice(1).map(line => {
-          // يدعم قيم فيها فواصل داخل علامات تنصيص
-          const cells = [];
-          let cur = "", inQ = false;
-          for (let i=0;i<line.length;i++){
-            const c = line[i];
-            if(c==='\"'){ inQ = !inQ; continue; }
-            if(c===',' && !inQ){ cells.push(cur); cur=""; }
-            else { cur+=c; }
+    /* CSV Parser بسيط (يكفي Google Sheet CSV) */
+    function parseCSV(text){
+      const lines = text.trim().split(/\r?\n/);
+      if(!lines.length) return [];
+      const headers = lines[0].split(",").map(h => h.trim());
+      const rows = [];
+      for(let i=1;i<lines.length;i++){
+        // دعم الحقول بين ""
+        const row = [];
+        let cur = "", inQ = false;
+        const line = lines[i];
+        for(let j=0;j<line.length;j++){
+          const ch = line[j];
+          if(ch === '"' ){
+            if(inQ && line[j+1] === '"'){ cur += '"'; j++; }
+            else inQ = !inQ;
+          }else if(ch === ',' && !inQ){
+            row.push(cur); cur="";
+          }else{
+            cur += ch;
           }
-          cells.push(cur);
-          const obj = {};
-          header.forEach((h,idx)=> obj[h] = (cells[idx]||"").trim());
-          return obj;
-        });
-        return rows;
+        }
+        row.push(cur);
+        const obj = {};
+        headers.forEach((h,idx)=> obj[h] = (row[idx]||"").trim());
+        rows.push(obj);
       }
+      return rows;
+    }
+
+    /* بطاقة عقار */
+    function ListingCard({ item, currency, rates }){
+      const price = priceFmt(item.priceJOD, currency, rates);
+      const waText = encodeURIComponent(
+        `استفسار عن عقار:
+العنوان: ${item.title}
+المدينة: ${item.city||""}
+السعر (${currency}): ${price}
+رابط الصورة: ${item.img||""}`
+      );
+      const wa = `${BRAND.whatsapp}?text=${waText}`;
+      return (
+        <article className="rounded-3xl overflow-hidden border bg-white shadow hover:shadow-md transition">
+          <div className="relative">
+            {!!item.img && <img src={item.img} alt={item.title} className="h-48 w-full object-cover" loading="lazy" />}
+            {item.is_featured?.toString().toLowerCase()==="true" && (
+              <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs bg-yellow-300 border">مميز</div>
+            )}
+          </div>
+          <div className="p-4">
+            <div className="text-sm text-neutral-500">{item.tag || item.type || ""}</div>
+            <div className="mt-1 font-extrabold">{item.title}</div>
+            <div className="text-sm text-neutral-600 mt-1">{item.city || ""}</div>
+            {item.meta && <div className="text-xs text-neutral-600 mt-2">{item.meta}</div>}
+            <div className="mt-3 font-extrabold">{price}</div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <a href={wa} target="_blank" className="text-center px-4 py-2 rounded-xl bg-black text-white text-sm">واتساب</a>
+              <a href={`mailto:${BRAND.email}?subject=استفسار عقار: ${encodeURIComponent(item.title)}`} className="text-center px-4 py-2 rounded-xl border text-sm">إيميل</a>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    /* التطبيق */
+    function App(){
+      const [currency, setCurrency] = useState("JOD");
+      const [rates, setRates] = useState(DEFAULT_RATES);
+      const [rows, setRows] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [err, setErr] = useState("");
 
       useEffect(()=>{
-        if(!CSV_URL){ setLoadingCSV(false); return; }
-        fetch(CSV_URL)
-          .then(r=>r.text())
-          .then(t=>{
-            const rows = parseCSV(t);
-            const today = new Date();
-
-            const mapped = rows
-              .filter(r => (r.approved?.toLowerCase?.() === "true") || r.approved === "TRUE" || r.approved === "1" || r.approved === "صح")
-              .map(r=>{
-                const priceJOD = Number((r.priceJOD||"").toString().replace(/[^\d.]/g,"")) || 0;
-                const is_featured = String(r.is_featured||"").toLowerCase() === "true";
-                const until = r.featured_until ? new Date(r.featured_until) : null;
-                const featuredActive = is_featured && until && (until >= today);
-                return {
-                  tag: r.tag || r.type || "عقار",
-                  title: r.title || "—",
-                  city: r.city || "",
-                  meta: r.meta || "",
-                  img: r.img || "https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop",
-                  offMarket: String(r.offMarket||"").toLowerCase() === "true",
-                  priceJOD,
-                  is_featured: featuredActive,
-                  featured_until: r.featured_until || ""
-                };
-              })
-              .sort((a,b)=> (b.is_featured?1:0) - (a.is_featured?1:0)); // المميّز أولاً
-
-            setListings(mapped);
-            setLoadingCSV(false);
-          })
-          .catch(e=>{
-            console.error("CSV error", e);
-            setLoadingCSV(false);
-          });
+        async function load(){
+          try{
+            setLoading(true);
+            const res = await fetch(CSV_URL, { cache: "no-store" });
+            if(!res.ok) throw new Error("تعذر جلب البيانات");
+            const text = await res.text();
+            const data = parseCSV(text)
+              .filter(r => (r.approved||"").toString().toLowerCase()==="true");
+            setRows(data);
+          }catch(e){
+            setErr(e.message || "خطأ غير متوقع");
+          }finally{
+            setLoading(false);
+          }
+        }
+        load();
       },[]);
 
-      // اشتقاق المدن والأنواع
-      const cities = useMemo(()=>{
-        const s = new Set(["الكل"]);
-        listings.forEach(l=> l.city && s.add(l.city));
-        return Array.from(s);
-      }, [listings]);
-      const types = useMemo(()=>{
-        const s = new Set(["الكل"]);
-        listings.forEach(l=> l.tag && s.add(l.tag));
-        return Array.from(s);
-      }, [listings]);
-
-      // تطبيق الفلترة
-      const filtered = listings.filter(l=>{
-        const okQ = !q || (l.title+" "+l.meta+" "+l.city).toLowerCase().includes(q.toLowerCase());
-        const okCity = (city==="الكل") || (l.city===city);
-        const okType = (type==="الكل") || (l.tag===type);
-        const okPrice = !maxPrice || (l.priceJOD <= Number(maxPrice));
-        return okQ && okCity && okType && okPrice;
-      });
-
-      // تعريض النتائج للمكوّنات الأخرى (خريطة لو فعّلناها لاحقًا)
-      window.__LIVORA_LATEST_LISTINGS__ = filtered;
+      const featured = useMemo(()=> rows.filter(r => (r.is_featured||"").toString().toLowerCase()==="true"), [rows]);
+      const normal = useMemo(()=> rows.filter(r => (r.is_featured||"").toString().toLowerCase()!=="true"), [rows]);
 
       return (
-        <section id="listings" className="max-w-7xl mx-auto px-4 mb-14">
-          <div className="flex items-end justify-between mb-3">
-            <h2 className="text-2xl md:text-3xl font-extrabold">عقارات مميزة</h2>
-            <div className="flex gap-3">
-              {FORM_URL
-                ? <a href={FORM_URL} target="_blank" className="text-sm underline underline-offset-4" onClick={()=>track('click_submit_form')}>نموذج رفع عقار</a>
-                : <span className="text-xs px-3 py-1 rounded-full border bg-neutral-100 text-neutral-500">أضف رابط النموذج لاحقًا</span>}
-            </div>
-          </div>
-
-          {/* شريط الفلاتر */}
-          <div className="grid md:grid-cols-4 gap-2 mb-4">
-            <input className="px-3 py-2 rounded-xl border text-sm" placeholder="بحث بالعنوان/الوصف/المدينة" value={q} onChange={e=>setQ(e.target.value)} />
-            <select className="px-3 py-2 rounded-xl border text-sm" value={city} onChange={e=>setCity(e.target.value)}>{cities.map(c => <option key={c}>{c}</option>)}</select>
-            <select className="px-3 py-2 rounded-xl border text-sm" value={type} onChange={e=>setType(e.target.value)}>{types.map(t => <option key={t}>{t}</option>)}</select>
-            <input className="px-3 py-2 rounded-xl border text-sm" type="number" min="0" placeholder="سقف السعر (JOD)" value={maxPrice} onChange={e=>setMaxPrice(e.target.value)} />
-          </div>
-
-          <div className="text-xs text-neutral-600 mb-2">{loadingCSV ? "جاري تحميل العقارات…" : `عدد النتائج: ${filtered.length}`}</div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {filtered.map((l,i)=>(
-              <article key={i} className={"rounded-3xl overflow-hidden border bg-white shadow-sm " + (l.is_featured ? "ring-2 ring-yellow-400" : "")}>
-                <div className="relative">
-                  <img src={l.img} alt={l.title} className="h-48 w-full object-cover" />
-                  {l.is_featured
-                    ? <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs bg-yellow-300 border font-bold">مميّز</div>
-                    : <div className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs bg-white/90 border">{l.tag||"عقار"}</div>}
-                </div>
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="text-lg font-bold">{l.title}</div>
-                    <button onClick={()=>toggleFav(l.title)} className={"text-sm px-2 py-1 rounded-full border " + (fav.includes(l.title) ? "bg-yellow-200" : "bg-white")}>
-                      {fav.includes(l.title) ? "★" : "☆"}
-                    </button>
-                  </div>
-                  <div className="text-sm text-neutral-600 mt-1">{l.city ? `📍 ${l.city} — ` : ""}{l.meta}</div>
-                  <div className="mt-3 font-extrabold">{Number(l.priceJOD||0).toLocaleString()} دينار</div>
-                  {l.offMarket && <div className="mt-2 text-xs bg-neutral-50 border rounded-xl p-2">Off-Market (تفاصيل إضافية بعد NDA)</div>}
-                  <div className="mt-4 flex gap-2">
-                    <a href={whatsappLink} target="_blank" className="flex-1 text-center px-4 py-2 rounded-xl bg-black text-white text-sm"
-                       onClick={()=>track('click_whatsapp', {position: 'listing_card', title:l.title})}>استفسار واتساب</a>
-                    <a href={"mailto:"+BRAND.email+"?subject="+encodeURIComponent("استفسار عن: "+(l.title||"عقار"))}
-                       className="flex-1 text-center px-4 py-2 rounded-xl border text-sm"
-                       onClick={()=>track('click_email', {position:'listing_card', title:l.title})}>مراسلة بريدية</a>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    // طلب عقار سريع (واتساب)
-    function RequestWizard(){
-      const [step,setStep]=useState(1);
-      const [type,setType]=useState("أرض");
-      const [area,setArea]=useState("عمّان");
-      const [budget,setBudget]=useState("");
-      const [name,setName]=useState("");
-      const [phone,setPhone]=useState("");
-      const msg =
-        "طلب عقار:\n" +
-        "النوع: " + type + "\n" +
-        "المنطقة: " + area + "\n" +
-        "الميزانية: " + (budget || "غير محددة") + "\n" +
-        "الاسم: " + (name || "—") + "\n" +
-        "الهاتف: " + (phone || "—");
-      const wa = BRAND.whatsappBase + "?text=" + buildWhatsAppMessage(msg);
-      return (
-        <div className="rounded-3xl border bg-white p-5 shadow-sm">
-          <div className="font-bold mb-2">طلب عقار خلال 30 ثانية</div>
-          {step===1 && (
-            <div className="grid md:grid-cols-3 gap-2 text-sm">
-              <select className="px-3 py-2 rounded-xl border" value={type} onChange={e=>setType(e.target.value)}>
-                <option>أرض</option><option>شقة</option><option>مجمع تجاري</option><option>مدرسة</option><option>فندق/منتجع</option>
-              </select>
-              <input className="px-3 py-2 rounded-xl border" placeholder="المنطقة/المدينة" value={area} onChange={e=>setArea(e.target.value)} />
-              <input className="px-3 py-2 rounded-xl border" placeholder="الميزانية (JOD)" value={budget} onChange={e=>setBudget(e.target.value)} />
-            </div>
-          )}
-          {step===2 && (
-            <div className="grid md:grid-cols-2 gap-2 text-sm">
-              <input className="px-3 py-2 rounded-xl border" placeholder="اسمك" value={name} onChange={e=>setName(e.target.value)} />
-              <input className="px-3 py-2 rounded-xl border" placeholder="رقم الهاتف" value={phone} onChange={e=>setPhone(e.target.value)} />
-            </div>
-          )}
-          {step===3 && (
-            <div className="text-sm bg-neutral-50 border rounded-2xl p-3 leading-7 whitespace-pre-wrap">{msg}</div>
-          )}
-          <div className="mt-3 flex gap-2">
-            {step>1 && <button className="px-4 py-2 rounded-xl border text-sm" onClick={()=>setStep(s=>Math.max(1,s-1))}>رجوع</button>}
-            {step<3 && <button className="px-4 py-2 rounded-xl bg-black text-white text-sm" onClick={()=>setStep(s=>Math.min(3,s+1))}>التالي</button>}
-            {step===3 && <a href={wa} target="_blank" className="px-4 py-2 rounded-xl bg-black text-white text-sm"
-                            onClick={()=>track('click_whatsapp', {position:'request_wizard'})}>إرسال عبر واتساب</a>}
-          </div>
-        </div>
-      );
-    }
-
-    function App(){
-      const [currency,setCurrency] = useState("JOD");
-      const rates = useRates();
-      useEffect(()=>{ document.title = BRAND.nameEn + " — " + BRAND.nameAr; },[]);
-      return (
-        <div dir="rtl" className="min-h-screen bg-neutral-50 text-neutral-900">
-          <header className="w-full border-b bg-white/80 backdrop-blur sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="min-h-screen">
+          <header className="w-full border-b bg-white/90 backdrop-blur sticky top-0 z-50">
+            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-2xl bg-black text-white grid place-items-center font-bold">L</div>
-                <div className="font-extrabold text-xl tracking-tight">{BRAND.nameEn} | {BRAND.nameAr}</div>
+                <div className="font-extrabold text-xl">{BRAND.nameEn} | {BRAND.nameAr}</div>
               </div>
               <div className="flex items-center gap-3">
-                <select
-                  className="px-3 py-2 rounded-xl border text-sm"
-                  value={currency}
-                  onChange={e=>{ setCurrency(e.target.value); track('change_currency', {to: e.target.value}); }}>
-                  {CURRENCIES.map(c=> <option key={c.code} value={c.code}>{c.label}</option>)}
+                <select value={currency} onChange={e=>setCurrency(e.target.value)} className="px-3 py-2 rounded-xl border text-sm">
+                  {Object.keys(DEFAULT_RATES).map(k => <option key={k} value={k}>{k} — {currencyLabel[k]}</option>)}
                 </select>
-                <a href="#listings" className="hidden md:inline hover:opacity-70 text-sm">عقارات مميزة</a>
-                <a href="#tools" className="hidden md:inline hover:opacity-70 text-sm">أدوات</a>
-                <a href="#contact" className="hidden md:inline hover:opacity-70 text-sm">تواصل</a>
-                <a href={whatsappLink} target="_blank"
-                   className="px-4 py-2 rounded-2xl bg-black text-white shadow hover:shadow-lg text-sm"
-                   onClick={()=>track('click_whatsapp', {position: 'header'})}>
-                  واتساب فوري
-                </a>
+                <a href={BRAND.whatsapp} target="_blank" className="px-4 py-2 rounded-2xl bg-black text-white text-sm">واتساب فوري</a>
               </div>
             </div>
           </header>
 
-          <section className="relative overflow-hidden">
+          <section className="relative">
             <div className="absolute inset-0 -z-10 bg-gradient-to-b from-neutral-100 to-neutral-50"></div>
-            <div className="max-w-7xl mx-auto px-4 pt-14 pb-10 grid lg:grid-cols-2 gap-10 items-center">
+            <div className="container mx-auto px-4 pt-12 pb-10 grid lg:grid-cols-2 gap-8 items-center">
               <div>
                 <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
-                  منصة {BRAND.nameAr} العقارية — صفقات أراضي، شقق، مجمعات ومدارس
+                  منصة عقارية موثوقة لصفقات <span className="bg-yellow-200 px-2 rounded">الأراضي، الشقق، المجمعات، والمدارس</span>
                 </h1>
-                <p className="mt-4 text-neutral-600 text-lg">
-                  نُحوّل الجدية إلى صفقات: تحقق ملكية، توثيق رسمي، تسويق احترافي، شبكة مستثمرين محلية وخليجية — مع أدوات فورية تزيد احتمالية الإغلاق.
+                <p className="mt-4 text-neutral-700">
+                  نُحوّل الجدية إلى صفقات: تحقق ملكية صارم، توثيق رسمي، تسويق احترافي، شبكة مستثمرين محلية وخليجية — مع أدوات فورية تزيد احتمالية الإغلاق.
                 </p>
-                <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                  <a href="#listings" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold shadow hover:shadow-lg">استعرض العقارات</a>
-                  {FORM_URL
-                   ? <a href={FORM_URL} target="_blank" className="px-5 py-3 rounded-2xl bg-white border font-semibold hover:bg-neutral-100">أضف عقارك الآن</a>
-                   : <a href="#contact" className="px-5 py-3 rounded-2xl bg-white border font-semibold hover:bg-neutral-100">أضف عقارك / اطلب عقار</a>}
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-                  <div className="rounded-2xl bg-white border p-4"><div className="text-2xl font-extrabold">0</div><div className="text-xs text-neutral-600">مستثمر نشط</div></div>
-                  <div className="rounded-2xl bg-white border p-4"><div className="text-2xl font-extrabold">0</div><div className="text-xs text-neutral-600">عقار موثّق</div></div>
-                  <div className="rounded-2xl bg-white border p-4"><div className="text-2xl font-extrabold">0</div><div className="text-xs text-neutral-600">صفقة مُغلقة</div></div>
+                <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-neutral-700">
+                  <div className="px-3 py-1.5 rounded-full bg-white border">اتفاقيات موثقة</div>
+                  <div className="px-3 py-1.5 rounded-full bg-white border">تحقق ملكية</div>
+                  <div className="px-3 py-1.5 rounded-full bg-white border">وساطة عادلة</div>
+                  <div className="px-3 py-1.5 rounded-full bg-white border">شبكة خليجية</div>
                 </div>
               </div>
               <div className="relative">
-                <img src="https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1600&auto=format&fit=crop" alt="Real estate hero" className="rounded-3xl shadow-xl w-full h-[360px] object-cover"/>
-                <div className="absolute -bottom-5 left-5 right-5 md:left-auto md:right-5 bg-white rounded-2xl shadow p-4 flex items-center gap-4">
+                <img src="https://images.unsplash.com/photo-1501183638710-841dd1904471?q=80&w=1200&auto=format&fit=crop" alt="Hero" className="rounded-3xl shadow-xl w-full h-[360px] object-cover"/>
+                <div className="absolute -bottom-5 left-5 right-5 bg-white rounded-2xl shadow p-4 flex items-center gap-4">
                   <div className="hidden md:block h-12 w-12 rounded-xl bg-neutral-900 text-white grid place-items-center font-bold">✔</div>
                   <div>
                     <div className="font-bold">سياسة التحقق قبل النشر</div>
-                    <div className="text-sm text-neutral-600">لا يُنشر أي عقار دون وثائق وصور/فيديو واقعية وموقع دقيق.</div>
+                    <div className="text-sm text-neutral-600">لا يُنشر أي عقار دون وثائق وصور واقعية وموقع دقيق.</div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section id="tools" className="max-w-7xl mx-auto px-4 mb-12">
-            <div className="grid lg:grid-cols-4 gap-4">
-              <RequestWizard />
-              <CommissionCalculator currency={currency} rates={rates} />
-              <RoiCalculator currency={currency} rates={rates} />
-              <ValuatorPro currency={currency} rates={rates} />
-            </div>
-          </section>
+          <main className="container mx-auto px-4">
+            {/* قسم العقارات المميّزة إن وُجد */}
+            {featured.length > 0 && (
+              <section className="mb-10">
+                <div className="flex items-end justify-between mb-4">
+                  <h2 className="text-2xl md:text-3xl font-extrabold">عقارات مميّزة</h2>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {featured.map((l,i)=> <ListingCard key={`f-${i}`} item={l} currency={currency} rates={rates} />)}
+                </div>
+              </section>
+            )}
 
-          <ListingsSection currency={currency} rates={rates} />
+            {/* بقية العقارات */}
+            <section className="mb-16">
+              <div className="flex items-end justify-between mb-4">
+                <h2 className="text-2xl md:text-3xl font-extrabold">كل العقارات</h2>
+              </div>
 
-          <!-- (اختياري لاحقًا) خريطة تفاعلية:
-          <section className="max-w-7xl mx-auto px-4 mb-10">
-            <h3 className="text-xl font-extrabold mb-3">الخريطة</h3>
-            <div id="mapBox" className="w-full h-80 rounded-2xl border"></div>
-          </section>
-          -->
+              {loading && (
+                <div className="rounded-2xl border bg-white p-6 text-neutral-600">جارٍ تحميل البيانات…</div>
+              )}
 
-          <section id="contact" className="max-w-7xl mx-auto px-4 mb-20">
+              {!loading && err && (
+                <div className="rounded-2xl border bg-red-50 p-6 text-red-700">خطأ في جلب البيانات: {err}</div>
+              )}
+
+              {!loading && !err && rows.length === 0 && (
+                <div className="rounded-2xl border bg-white p-6 text-neutral-600">
+                  لا توجد عقارات بعد. أضِف صفوفًا إلى Google Sheet مع <b>approved = TRUE</b> وستظهر هنا مباشرة.
+                </div>
+              )}
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {normal.map((l,i)=> <ListingCard key={`n-${i}`} item={l} currency={currency} rates={rates} />)}
+              </div>
+            </section>
+          </main>
+
+          <section id="contact" className="container mx-auto px-4 mb-20">
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="rounded-3xl border bg-white p-6 md:p-10 shadow-sm">
                 <h3 className="text-2xl font-extrabold">تواصل سريع</h3>
-                <p className="text-neutral-600 mt-2">اختر الطريقة الأسهل لك: واتساب أو بريد إلكتروني.</p>
+                <p className="text-neutral-600 mt-2">اختر الطريقة الأسهل لك للتواصل المباشر.</p>
                 <div className="mt-6 grid gap-3">
-                  <a href={whatsappLink} target="_blank" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold text-center"
-                     onClick={()=>track('click_whatsapp', {position: 'contact_section'})}>
-                    واتساب فوري: {BRAND.phoneIntl}
-                  </a>
-                  <a href={"mailto:"+BRAND.email} className="px-5 py-3 rounded-2xl border font-semibold text-center"
-                     onClick={()=>track('click_email', {position: 'contact_section'})}>
-                    مراسلة بريدية: {BRAND.email}
-                  </a>
+                  <a href={BRAND.whatsapp} target="_blank" className="px-5 py-3 rounded-2xl bg-black text-white font-semibold text-center">واتساب فوري</a>
+                  <a href={`mailto:${BRAND.email}`} className="px-5 py-3 rounded-2xl border font-semibold text-center">مراسلة بريدية</a>
                 </div>
-                <div className="text-xs text-neutral-500 mt-2">بالضغط على الروابط، توافق على الشروط وسياسة الخصوصية.</div>
+                <div className="text-xs text-neutral-500 mt-3">
+                  عند الإرسال أنت توافق على سياسة الخصوصية والشروط.
+                </div>
               </div>
               <div className="rounded-3xl border bg-white p-6 md:p-10 shadow-sm">
-                <h3 className="text-2xl font-extrabold">سياسة النزاهة والموثوقية</h3>
-                <ul className="list-disc pr-6 mt-3 text-neutral-700 leading-8 text-sm">
-                  <li>لا ننشر أي عقار بدون وثائق أساسية وصور/فيديو حديث.</li>
-                  <li>الاتفاق على العمولة كتابيًا قبل التسويق، وشفافية كاملة في كل خطوة.</li>
-                  <li>حفظ سرية بيانات المالك والمشتري وعدم مشاركة التفاصيل دون إذن.</li>
-                  <li>حماية حقوق جميع الأطراف وفق القوانين الأردنية.</li>
-                </ul>
-                <div className="mt-6 rounded-2xl bg-neutral-50 border p-4 text-sm text-neutral-600">
-                  للتعاون الفوري بالمشاريع الكبيرة:
-                  <div className="mt-2 font-bold">اتصل: {BRAND.phoneIntl} • البريد: {BRAND.email}</div>
+                <h3 className="text-2xl font-extrabold">معلومات الاتصال</h3>
+                <div className="mt-4 text-neutral-700 leading-8 text-sm">
+                  <div><b>الهاتف/واتساب:</b> {BRAND.phoneIntl}</div>
+                  <div><b>البريد:</b> {BRAND.email}</div>
                 </div>
               </div>
             </div>
           </section>
 
           <footer className="border-t bg-white">
-            <div className="max-w-7xl mx-auto px-4 py-8 text-sm flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
+            <div className="container mx-auto px-4 py-8 text-sm flex flex-col md:flex-row items-center md:items-start justify-between gap-4">
               <div className="text-neutral-600">© {new Date().getFullYear()} {BRAND.nameEn} – جميع الحقوق محفوظة.</div>
               <div className="flex gap-4 text-neutral-600">
                 <a href="#" className="hover:opacity-70">الشروط والأحكام</a>
                 <a href="#" className="hover:opacity-70">سياسة الخصوصية</a>
-                <a href={whatsappLink} target="_blank" className="hover:opacity-70">واتساب</a>
+                <a href={BRAND.whatsapp} target="_blank" className="hover:opacity-70">واتساب</a>
               </div>
             </div>
           </footer>
@@ -636,7 +301,7 @@ Preset: ${preset}
       );
     }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
 </body>
 </html>
